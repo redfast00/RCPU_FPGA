@@ -63,9 +63,20 @@ module j1(
       4'b0010, 4'b0100 : {register_write_enable, register_write_data} = { 1'b1, mem_read_data};
       // ATH
       4'b0110 : begin
+        register_write_enable = 1'b1;
         case (ath_opcode)
-        4'b0000 : { register_write_enable, register_write_data } = { 1'b1, register_file[source] + register_file[destination] };
-        default : { register_write_enable, register_write_data } = { 1'b1,  16'hABCD }; // TODO implement other opcodes
+        4'b0000 : register_write_data = register_file[destination] + register_file[source];
+        4'b0001 : register_write_data = register_file[destination] - register_file[source];
+        4'b0010 : register_write_data = register_file[destination] * register_file[source];
+        4'b0011 : register_write_data = register_file[destination] / register_file[source];
+        // TODO skipped shift instructions because they are too expensive
+        4'b0110 : register_write_data = register_file[destination] & register_file[source];
+        4'b0111 : register_write_data = register_file[destination] | register_file[source];
+        4'b1000 : register_write_data = register_file[destination] ^ register_file[source];
+        4'b1001 : register_write_data = ~ register_file[source];
+        4'b1010 : register_write_data = register_file[destination] + 16'b1;
+        4'b1011 : register_write_data = register_file[destination] - 16'b1;
+        default : register_write_data  = 16'd1337;
         endcase
       end
       // POP
