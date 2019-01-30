@@ -41,16 +41,16 @@ module j1(
   wire [0:1] source      = instruction[8:9];
   wire [0:9] large_argument = instruction[0:9];
   wire [0:3] ath_opcode = instruction[4:7];
+  wire       ath_direction = instruction[3];
   // selects the place to store the result of an ATH opcode based on the M bit
-  wire [0:1] ath_store = instruction[3] ? destination : source;
 
   reg register_write_enable;
   reg [0:15] register_write_data;
+  reg [0:1] register_address;
   reg [0:15] requested_mem_read_addr;
 
   stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
-  // TODO destination for ATH instructions is not always DD, but depends on M
   // calculate next registervalues
   always @*
   begin
@@ -71,6 +71,15 @@ module j1(
       // POP
       4'b1011: {register_write_enable, register_write_data} = {1'b1, st0};
       default: {register_write_enable, register_write_data} = 0;
+  endcase
+  end
+
+  always @*
+  begin
+  case({ath_direction, opcode})
+       // if M = 1 in an ATH instruction, store in source register instead of destination register
+       5'b1_0110: register_address = source;
+       default: register_address = destination;
   endcase
   end
 
@@ -136,6 +145,8 @@ module j1(
     5'b0_1000: pcN = st0;
     // JLT: jump to source register if "A" register is smaller than destination register
     5'b0_1001: pcN = ((register_file[destination] > register_file[0]) ? register_file[source] : pc_plus_1);
+    // HLT: stop processor
+    5'b0_1101: pcN = pc;
     // JMP: jump to argument
     5'b0_1110: pcN = large_argument;
     // JRM: jump to source register
@@ -159,7 +170,6 @@ module j1(
           mem_read_address = pc;
           mem_read_enable = 1;
           current_state = 2'b01; // go to memory fetch stage
-          // $display(mem_read_data);
         end
         2'b01: begin // memory fetch stage
           instruction = mem_read_data;
@@ -170,7 +180,7 @@ module j1(
         end
         2'b11: begin // writeback stage
           if (register_write_enable) begin
-              register_file[destination] = register_write_data;
+              register_file[register_address] = register_write_data;
           end
           pc = pcN;
           current_state = 2'b00;
