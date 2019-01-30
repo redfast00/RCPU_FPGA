@@ -48,13 +48,13 @@ module rcpu_tb();
     clk = 0;
     resetq = 0;
     // start cpu after 2 clock cycles
-    #30
+    #20
     resetq = 1;
   end
 
   initial  begin
-      $display("\t\ttime,\tclk,\tpc,\t\t\tcurrent_state,\topcode,\tmem_read_enable,\tmem_write_enable");
-      $monitor("%d,\t%b,\t%b\t%b\t\t%b\t%b\t\t\t%b",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, mem_read_enable, mem_write_enable);
+      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tmem_read_enable\tregister_write_enable\tA register");
+      $monitor("%d\t%b\t%b\t%b\t\t%b\t%b\t\t%b\t\t\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, mem_read_enable, _cpu.register_write_enable, _cpu.register_file[0]);
   end
 
   always

@@ -41,8 +41,8 @@ module j1(
   wire [0:1] source      = instruction[8:9];
   wire [0:9] large_argument = instruction[0:9];
   wire [0:3] ath_opcode = instruction[4:7];
-  wire       ath_direction = instruction[3];
   // selects the place to store the result of an ATH opcode based on the M bit
+  wire       ath_direction = instruction[3];
 
   reg register_write_enable;
   reg [0:15] register_write_data;
@@ -58,7 +58,7 @@ module j1(
       // MOV
       4'b0000 : {register_write_enable, register_write_data} = { 1'b1, register_file[source] };
       // LDV
-      4'b0001 : {register_write_enable, register_write_data} = { 1'b1, large_argument };
+      4'b0001 : {register_write_enable, register_write_data} = { 1'b1, 6'b0, large_argument };
       // LDA, LDR
       4'b0010, 4'b0100 : {register_write_enable, register_write_data} = { 1'b1, mem_read_data};
       // ATH
@@ -100,7 +100,7 @@ module j1(
     // calculate requested_mem_read_addr
     case (opcode)
     // LDA: load from memory from instruction argument
-    4'b0010: requested_mem_read_addr = large_argument;
+    4'b0010: requested_mem_read_addr = {6'b0, large_argument};
     // LDR: load from memory pointed at by the source register
     4'b0100: requested_mem_read_addr = register_file[source];
     default: requested_mem_read_addr = 0;
@@ -113,7 +113,7 @@ module j1(
     // only write if current_state == writeback state
     casez ({current_state, opcode})
     // LDM: load to instruction argument
-    6'b10_0011: {mem_write_enable, mem_write_data, mem_write_address} = {1'b1, register_file[destination], large_argument};
+    6'b10_0011: {mem_write_enable, mem_write_data, mem_write_address} = {1'b1, register_file[destination], 6'b0, large_argument};
     // LDP: load to memory pointed at by the destination register
     6'b10_0101: {mem_write_enable, mem_write_data, mem_write_address} = {1'b1, register_file[source], register_file[destination]};
     // this should never get written
@@ -148,7 +148,7 @@ module j1(
     // HLT: stop processor
     5'b0_1101: pcN = pc;
     // JMP: jump to argument
-    5'b0_1110: pcN = large_argument;
+    5'b0_1110: pcN = {6'b0, large_argument};
     // JRM: jump to source register
     5'b0_1111: pcN = register_file[source];
     // default: increase instruction
@@ -176,16 +176,16 @@ module j1(
           // TODO check if instruction is updated by now and the always@* blocks depending on it
           mem_read_address = requested_mem_read_addr;
           mem_read_enable = 1;
-          current_state = 2'b11; // go to writeback stage
+          current_state = 2'b10; // go to writeback stage
         end
-        2'b11: begin // writeback stage
+        2'b10: begin // writeback stage
           if (register_write_enable) begin
               register_file[register_address] = register_write_data;
           end
           pc = pcN;
           current_state = 2'b00;
         end
-        default: begin
+        default: begin // invalid stage
           current_state = 2'b00;
         end
       endcase
