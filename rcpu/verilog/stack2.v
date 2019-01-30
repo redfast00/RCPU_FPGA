@@ -10,10 +10,10 @@ module stack2(
   input wire [1:0] delta,
   // 00 no we = do nothing
   // 00 we    = overwrite top of stack
-  // 10 no we = do nothing
-  // 10 we    = overwrite top of stack
-  // 01 no we = swap head and snd
-  // 01 we    = add written item to stack
+  // 01 no we = do nothing
+  // 01 we    = overwrite top of stack
+  // 10 no we = swap head and snd
+  // 10 we    = add written item to stack
   // 11 no we = pop stack
   // 11 we    = pop, then overwrite stack
   input wire [`WIDTH-1:0] wd);  // write data
