@@ -100,7 +100,7 @@ module j1(
          did_write_in_sys = st0[15];
          io_read_enable  = st0[14];
          did_read_in_sys = st0[14];
-         io_address      = {2'b0, st0[0:13]};
+         io_address      = {st0[0:13], 2'b00};
          io_write_data   = st1;
        end
        default:  {io_write_enable, io_address, io_write_data} = 0;
