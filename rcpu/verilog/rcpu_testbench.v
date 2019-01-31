@@ -5,8 +5,8 @@ module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr,
   end
 
   always @(posedge clk) begin
-        if (write_enable) mem[write_addr] <= write_data;
-        if (read_enable) read_data <= mem[read_addr];
+        if (write_enable) mem[write_addr % 4096] <= write_data;
+        if (read_enable) read_data <= mem[read_addr % 4096];
   end
 endmodule
 
