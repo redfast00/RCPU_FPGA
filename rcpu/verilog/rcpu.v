@@ -1,6 +1,4 @@
 `default_nettype none
-`define WIDTH 16
-
 
 module j1(
   input wire clk, // clock
@@ -43,7 +41,7 @@ module j1(
   wire [0:3] ath_opcode = instruction[4:7];
   // selects the place to store the result of an ATH opcode based on the M bit
   wire       ath_direction = instruction[3];
-  wire       ath_bitshift_amt = instruction[0:2];
+  wire [0:2] ath_bitshift_amt = instruction[0:2];
 
   reg register_write_enable;
   reg [0:15] register_write_data;
