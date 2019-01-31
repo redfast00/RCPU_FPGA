@@ -43,6 +43,7 @@ module j1(
   wire [0:3] ath_opcode = instruction[4:7];
   // selects the place to store the result of an ATH opcode based on the M bit
   wire       ath_direction = instruction[3];
+  wire       ath_bitshift_amt = instruction[0:2];
 
   reg register_write_enable;
   reg [0:15] register_write_data;
@@ -69,9 +70,11 @@ module j1(
         case (ath_opcode)
         4'b0000 : register_write_data = register_file[destination] + register_file[source];
         4'b0001 : register_write_data = register_file[destination] - register_file[source];
-        // TODO skipped shift instructions, multiply and divide because they are too expensive
+        // TODO skipped multiply and divide because they are too expensive
         // 4'b0010 : register_write_data = register_file[destination] * register_file[source];
         // 4'b0011 : register_write_data = register_file[destination] / register_file[source];
+        4'b0100 : register_write_data = register_file[destination] << ath_bitshift_amt;
+        4'b0101 : register_write_data = register_file[destination] >> ath_bitshift_amt;
         4'b0110 : register_write_data = register_file[destination] & register_file[source];
         4'b0111 : register_write_data = register_file[destination] | register_file[source];
         4'b1000 : register_write_data = register_file[destination] ^ register_file[source];
