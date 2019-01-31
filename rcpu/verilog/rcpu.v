@@ -69,9 +69,9 @@ module j1(
         case (ath_opcode)
         4'b0000 : register_write_data = register_file[destination] + register_file[source];
         4'b0001 : register_write_data = register_file[destination] - register_file[source];
-        4'b0010 : register_write_data = register_file[destination] * register_file[source];
-        4'b0011 : register_write_data = register_file[destination] / register_file[source];
-        // TODO skipped shift instructions because they are too expensive
+        // TODO skipped shift instructions, multiply and divide because they are too expensive
+        // 4'b0010 : register_write_data = register_file[destination] * register_file[source];
+        // 4'b0011 : register_write_data = register_file[destination] / register_file[source];
         4'b0110 : register_write_data = register_file[destination] & register_file[source];
         4'b0111 : register_write_data = register_file[destination] | register_file[source];
         4'b1000 : register_write_data = register_file[destination] ^ register_file[source];
