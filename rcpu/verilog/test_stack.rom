@@ -1,0 +1,20 @@
+// LDV A, 0x3FF
+FFC1
+
+// LDV B, 0x3
+00D1
+
+//PSH A
+000A
+
+//PSH B
+004A
+
+//POP C
+002B
+
+//POP D
+003B
+
+//HLT
+000D

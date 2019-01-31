@@ -51,7 +51,7 @@ module j1(
 
   stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
-  // calculate next registervalues
+  // calculate next register values
   always @*
   begin
   case(opcode)
@@ -132,6 +132,7 @@ module j1(
     endcase
   end
 
+   // TODO SYS
   always @*
   begin
     // calculate next datastack operations
@@ -144,6 +145,22 @@ module j1(
     6'b10_1011:   {dstkW, dspI} = {1'b0, 2'b11};
     // default: don't modify the stack
     default:   {dstkW, dspI} = {1'b0, 2'b00};
+    endcase
+
+    // calculate next top of stack. This might or might not get written,
+    // depending if write bit (dstkW) is set
+
+    case (opcode)
+    // CAL
+    4'b0111: st0N = pc_plus_1;
+    // PSH
+    4'b1010: st0N = register_file[source];
+    // SYS
+    4'b1100: st0N = 0; // TODO
+    // POP, RET
+    4'b1000, 4'b1011: st0N = st1;
+    // default: don't modify the stack
+    default: st0N = st0;
     endcase
 
     // calculate next program counter (instruction pointer)
@@ -193,6 +210,7 @@ module j1(
           if (register_write_enable) begin
               register_file[register_address] = register_write_data;
           end
+          st0 = st0N;
           pc = pcN;
           current_state = 2'b00;
         end

@@ -1,7 +1,7 @@
 module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, read_addr, write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("test.rom", mem);
+    $readmemh("test_stack.rom", mem);
   end
 
   always @(posedge clk) begin
@@ -53,8 +53,8 @@ module rcpu_tb();
   end
 
   initial  begin
-      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tmem_read_enable\tregister_write_enable\tA register");
-      $monitor("%d\t%b\t%b\t%b\t\t%b\t%b\t\t%b\t\t\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, mem_read_enable, _cpu.register_write_enable, _cpu.register_file[0]);
+      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tmem_read_enable\tregister_write_enable\tA\tB\tC\tD\tTOS");
+      $monitor("%d\t%b\t%b\t%b\t\t%b\t%b\t\t%b\t\t\t%h\t%h\t%h\t%h\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, mem_read_enable, _cpu.register_write_enable, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0);
   end
 
   always
