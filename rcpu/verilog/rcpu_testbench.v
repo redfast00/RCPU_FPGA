@@ -33,7 +33,7 @@ module rcpu_tb();
       .resetq(resetq),
       .io_read_enable(io_read_enable),
       .io_write_enable(io_write_enable),
-      .io_addr(io_addr),
+      .io_address(io_addr),
       .io_write_data(io_write_data),
       .io_read_data(io_read_data),
 

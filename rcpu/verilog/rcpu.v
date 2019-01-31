@@ -8,7 +8,7 @@ module j1(
 
   output reg io_read_enable,
   output reg io_write_enable,
-  input  wire [0:15] io_addr, // TODO convert endianness
+  output reg  [0:15] io_address, // TODO convert endianness
   output reg  [0:15] io_write_data,
   input  wire [0:15] io_read_data,
 
@@ -85,6 +85,22 @@ module j1(
   endcase
   end
 
+  // calculate io operations
+  always @*
+  begin
+  case({current_state, opcode})
+       // SYS opcode in memory fetch state
+       6'b10_1100 : begin
+         io_write_enable = st0[15];
+         io_read_enable  = st0[14];
+         io_address      = {2'b0, st0[0:13]};
+         io_write_data   = st1;
+       end
+       default:  {io_write_enable, io_address, io_write_data} = 0;
+  endcase
+  end
+
+  // calculate in which register to store the result of the calculation
   always @*
   begin
   case({ath_direction, opcode})
@@ -93,18 +109,6 @@ module j1(
        default: register_address = destination;
   endcase
   end
-
-  // wire func_T_N =   (insn[6:4] == 1); //001 (write to datastack?)
-  // wire func_T_R =   (insn[6:4] == 2); //010 (write to return stack?)
-  // wire func_write = (insn[6:4] == 3); //011 (write to memory)
-  // wire func_iow =   (insn[6:4] == 4); //100 (write to io)
-  // wire func_ior =   (insn[6:4] == 5); //101 (read from io)
-  //
-  // wire is_alu = !pc[12] & (insn[15:13] == 3'b011);
-  // assign mem_wr = !reboot & is_alu & func_write;
-  // assign dout = st1;
-  // assign io_wr = !reboot & is_alu & func_iow;
-  // assign io_rd = !reboot & is_alu & func_ior;
 
   always @*
   begin
@@ -138,11 +142,11 @@ module j1(
     // calculate next datastack operations
     case ({current_state, opcode})
     // CAL, PSH: push
-    6'b10_0111,
-    6'b10_1010:   {dstkW, dspI} = {1'b1, 2'b01};
+    6'b00_0111,
+    6'b00_1010:   {dstkW, dspI} = {1'b1, 2'b01};
     // RET, POP: pop
-    6'b10_1000,
-    6'b10_1011:   {dstkW, dspI} = {1'b0, 2'b11};
+    6'b00_1000,
+    6'b00_1011:   {dstkW, dspI} = {1'b0, 2'b11};
     // default: don't modify the stack
     default:   {dstkW, dspI} = {1'b0, 2'b00};
     endcase
@@ -197,6 +201,7 @@ module j1(
         2'b00: begin // fetch stage
           mem_read_address = pc;
           mem_read_enable = 1;
+          st0 = st0N;
           current_state = 2'b01; // go to memory fetch stage
         end
         2'b01: begin // memory fetch stage
@@ -210,7 +215,6 @@ module j1(
           if (register_write_enable) begin
               register_file[register_address] = register_write_data;
           end
-          st0 = st0N;
           pc = pcN;
           current_state = 2'b00;
         end
