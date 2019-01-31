@@ -28,7 +28,7 @@ module rcpu_tb();
         .read_data(mem_read_data),
         .write_data(mem_write_data));
 
-    j1 _cpu(
+    rcpu _cpu(
       .clk(clk),
       .resetq(resetq),
       .io_read_enable(io_read_enable),
@@ -53,8 +53,8 @@ module rcpu_tb();
   end
 
   initial  begin
-      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tA\tB\tC\tD\tTOS\tio_address");
-      $monitor("%d\t%b\t%b\t%b\t\t%b\t%h\t%h\t%h\t%h\t%h\t%b",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0, _cpu.io_address);
+      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tA\tB\tC\tD\tTOS\tio_addr\t\t\tR/W io\tio_data");
+      $monitor("%d\t%b\t%b\t%b\t\t%b\t%h\t%h\t%h\t%h\t%h\t%b\t%b/%b\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0, _cpu.io_address, _cpu.io_read_enable, _cpu.io_write_enable, _cpu.io_write_data);
   end
 
   always

@@ -5,7 +5,7 @@
 module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, read_addr, write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("../build/rom.hex", mem);
+    $readmemh("../build/rom_leds_on.hex", mem);
   end
 
   always @(posedge clk) begin
@@ -142,7 +142,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   wire [0:15] io_read_data, io_address, io_write_data;
 
   // TODO only enable CPU after ~40 clock cycles to work around bug in RAM init
-  j1 _j1(
+  rcpu _rcpu(
     .clk(clk),
     .resetq(resetq),
     .io_read_enable(io_read_enable),
@@ -216,8 +216,10 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
 
   wire [4:0] LEDS;
   wire w4 = io_write_enable & io_address[2];
+  reg led_enabled = 0;
 
-  outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
+  outpin led0 (.clk(clk), .we(led_enabled), .pin(D5), .wd(1), .rd(LEDS[0]));
+  // outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
   outpin led1 (.clk(clk), .we(w4), .pin(D4), .wd(io_write_data[14]), .rd(LEDS[1]));
   outpin led2 (.clk(clk), .we(w4), .pin(D3), .wd(io_write_data[13]), .rd(LEDS[2]));
   outpin led3 (.clk(clk), .we(w4), .pin(D2), .wd(io_write_data[12]), .rd(LEDS[3]));
@@ -292,6 +294,8 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
       hdr2_dir <= io_write_data[8:15];
     if (io_write_enable & io_address[11])
       {boot, s1, s0} <= io_write_data[13:15];
+    if (mem_read_enable)
+      led_enabled <= 1;
   end
 
 endmodule // top

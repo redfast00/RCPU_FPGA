@@ -1,6 +1,6 @@
 `default_nettype none
 
-module j1(
+module rcpu(
   input wire clk, // clock
   input wire resetq,
 
@@ -101,7 +101,7 @@ module j1(
          io_address      = {st0[0:13], 2'b00};
          io_write_data   = st1;
        end
-       default:  {io_write_enable, io_address, io_write_data} = 0;
+       default:  {io_write_enable, io_read_enable, io_address, io_write_data} = 0;
   endcase
   end
 
