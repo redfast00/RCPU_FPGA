@@ -49,6 +49,8 @@ module j1(
   reg [0:1] register_address;
   reg [0:15] requested_mem_read_addr;
 
+  reg did_write_in_sys = 0;
+  reg did_read_in_sys = 0;
   stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
   // calculate next register values
@@ -92,7 +94,9 @@ module j1(
        // SYS opcode in memory fetch state
        6'b10_1100 : begin
          io_write_enable = st0[15];
+         did_write_in_sys = st0[15];
          io_read_enable  = st0[14];
+         did_read_in_sys = st0[14];
          io_address      = {2'b0, st0[0:13]};
          io_write_data   = st1;
        end
@@ -147,6 +151,16 @@ module j1(
     // RET, POP: pop
     6'b00_1000,
     6'b00_1011:   {dstkW, dspI} = {1'b0, 2'b11};
+    // SYS in writeback stage: pop address
+    6'b10_1100:   {dstkW, dspI} = {1'b0, 2'b11};
+    // SYS in instruction fetch stage:
+    6'b00_1100: case ({did_read_in_sys, did_write_in_sys})
+        2'b00: {dstkW, dspI} = {1'b0, 2'b00};
+        2'b10: {dstkW, dspI} = {1'b1, 2'b01};
+        2'b01: {dstkW, dspI} = {1'b0, 2'b11};
+        2'b11: {dstkW, dspI} = {1'b1, 2'b00};
+        default: {dstkW, dspI} = {1'b0, 2'b00}; // should never happen
+    endcase
     // default: don't modify the stack
     default:   {dstkW, dspI} = {1'b0, 2'b00};
     endcase
@@ -163,6 +177,12 @@ module j1(
     4'b1100: st0N = 0; // TODO
     // POP, RET
     4'b1000, 4'b1011: st0N = st1;
+    4'b1100: begin
+        if (did_read_in_sys)
+            st0N = io_read_data;
+        else
+            st0N = st0;
+    end
     // default: don't modify the stack
     default: st0N = st0;
     endcase
