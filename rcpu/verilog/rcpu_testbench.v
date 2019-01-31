@@ -1,7 +1,7 @@
 module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, read_addr, write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("test_stack.rom", mem);
+    $readmemh("../build/rom_leds_on.hex", mem);
   end
 
   always @(posedge clk) begin
@@ -53,15 +53,18 @@ module rcpu_tb();
   end
 
   initial  begin
-      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tmem_read_enable\tregister_write_enable\tA\tB\tC\tD\tTOS");
-      $monitor("%d\t%b\t%b\t%b\t\t%b\t%b\t\t%b\t\t\t%h\t%h\t%h\t%h\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, mem_read_enable, _cpu.register_write_enable, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0);
+      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tA\tB\tC\tD\tTOS\tio_address");
+      $monitor("%d\t%b\t%b\t%b\t\t%b\t%h\t%h\t%h\t%h\t%h\t%b",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0, _cpu.io_address);
   end
 
   always
     #5 clk = !clk;
 
 
-  initial
-    #500 $finish;
+  always
+    #1 if (_cpu.opcode == 4'b1101) begin
+        $display("HLT");
+        $finish();
+    end
 
 endmodule
