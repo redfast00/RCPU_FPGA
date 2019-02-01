@@ -16,7 +16,11 @@ module rcpu(
 
   output reg [0:15] mem_read_address,
   output reg mem_read_enable,
-  input  wire [0:15] mem_read_data // data that was read from memory
+  input  wire [0:15] mem_read_data, // data that was read from memory
+  // DEBUG
+
+  output reg [0:1] current_state, // there are 3 states: fetch instruction, fetch data and write data
+  output reg [0:15] instruction
   ); // end of inputs and outputs
 
   reg [0:15] st0, st0N;   // top of data stack
@@ -27,13 +31,12 @@ module rcpu(
 
   reg [0:15] register_file [0:3];
   reg reboot = 1;
-  reg [0:1] current_state; // there are 3 states: fetch instruction, fetch data and write data
+
 
   // The datastack
   wire [0:15] st1; // top of stack
   reg [1:0] dspI;
 
-  reg [0:15] instruction;
   wire [0:3] opcode = instruction[12:15];
   wire [0:1] destination = instruction[10:11];
   wire [0:1] source      = instruction[8:9];
@@ -48,8 +51,8 @@ module rcpu(
   reg [0:1] register_address;
   reg [0:15] requested_mem_read_addr;
 
-  reg did_write_in_sys = 0;
-  reg did_read_in_sys = 0;
+  reg did_write_in_sys;
+  reg did_read_in_sys;
   stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
   // calculate next register values
@@ -71,8 +74,8 @@ module rcpu(
         // TODO skipped multiply and divide because they are too expensive
         // 4'b0010 : register_write_data = register_file[destination] * register_file[source];
         // 4'b0011 : register_write_data = register_file[destination] / register_file[source];
-        4'b0100 : register_write_data = register_file[destination] << ath_bitshift_amt;
-        4'b0101 : register_write_data = register_file[destination] >> ath_bitshift_amt;
+        // 4'b0100 : register_write_data = register_file[destination] << ath_bitshift_amt;
+        // 4'b0101 : register_write_data = register_file[destination] >> ath_bitshift_amt;
         4'b0110 : register_write_data = register_file[destination] & register_file[source];
         4'b0111 : register_write_data = register_file[destination] | register_file[source];
         4'b1000 : register_write_data = register_file[destination] ^ register_file[source];
@@ -212,10 +215,13 @@ module rcpu(
   always @(negedge resetq or posedge clk)
   begin
     if (!resetq) begin
-      reboot <= 1'b1;
-      { pc, st0} <= 0;
-      {register_file[0], register_file[1], register_file[2], register_file[3]} <= 0;
-      current_state <= 2'b11;
+      reboot = 1'b1;
+      { pc, st0} = 0;
+      register_file[0] = 0;
+      register_file[1] = 0;
+      register_file[2] = 0;
+      register_file[3] = 0;
+      current_state = 2'b11;
     end else begin
       reboot <= 0;
       case(current_state)
