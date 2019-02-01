@@ -2,10 +2,10 @@
 
 `default_nettype none
 
-module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, read_addr, write_data, output reg [0:15] read_data);
+module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, input [0:15] read_addr, input[0:15] write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("../build/rom_leds_on.hex", mem);
+    $readmemh("../build/zeros.hex", mem);
   end
 
   always @(posedge clk) begin
@@ -140,11 +140,14 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
 
   wire io_read_enable, io_write_enable;
   wire [0:15] io_read_data, io_address, io_write_data;
+  wire [0:1] current_state;
+  wire [0:15] instruction;
 
+  reg start_cpu = 0;
   // TODO only enable CPU after ~40 clock cycles to work around bug in RAM init
   rcpu _rcpu(
     .clk(clk),
-    .resetq(resetq),
+    .resetq(resetq & start_cpu),
     .io_read_enable(io_read_enable),
     .io_write_enable(io_write_enable),
     .io_address(io_address),
@@ -156,7 +159,10 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     .mem_read_address(mem_read_addr),
     .mem_write_address(mem_write_addr),
     .mem_read_data(mem_read_data),
-    .mem_write_data(mem_write_data));
+    .mem_write_data(mem_write_data),
+    .current_state( current_state),
+    .instruction(instruction)
+    );
 
   // ######   PMOD   ##########################################
 
@@ -166,7 +172,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   ioport _mod (.clk(clk),
                .pins({PIO1_09, PIO1_08, PIO1_07, PIO1_06, PIO1_05, PIO1_04, PIO1_03, PIO1_02}),
                .we(io_write_enable & io_address[0]),
-               .wd(io_write_data),
+               .wd(io_write_data[8:15]),
                .rd(pmod_in),
                .dir(pmod_dir));
 
@@ -218,7 +224,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   wire w4 = io_write_enable & io_address[2];
   reg led_enabled = 0;
 
-  outpin led0 (.clk(clk), .we(led_enabled), .pin(D5), .wd(1), .rd(LEDS[0]));
+  outpin led0 (.clk(clk), .we(1), .pin(D5), .wd(led_enabled), .rd(LEDS[0]));
   // outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
   outpin led1 (.clk(clk), .we(w4), .pin(D4), .wd(io_write_data[14]), .rd(LEDS[1]));
   outpin led2 (.clk(clk), .we(w4), .pin(D3), .wd(io_write_data[13]), .rd(LEDS[2]));
@@ -285,6 +291,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     .S1(s1)
     );
 
+  reg [0:8] ticks = 0;
   always @(posedge clk) begin
     if (io_write_enable & io_address[1])
       pmod_dir <= io_write_data[8:15];
@@ -294,8 +301,12 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
       hdr2_dir <= io_write_data[8:15];
     if (io_write_enable & io_address[11])
       {boot, s1, s0} <= io_write_data[13:15];
-    if (mem_read_enable)
-      led_enabled <= 1;
+    if (ticks >= 64)
+      start_cpu <= 1;
+    ticks <= ticks + 1;
+    // if (opcode != 16'h000D)
+    //     led_enabled <= 1;
+    led_enabled <= (instruction == 16'h000D);
   end
 
 endmodule // top
