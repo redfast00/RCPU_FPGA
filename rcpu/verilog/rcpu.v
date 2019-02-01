@@ -51,8 +51,8 @@ module rcpu(
   reg [0:1] register_address;
   reg [0:15] requested_mem_read_addr;
 
-  reg did_write_in_sys;
-  reg did_read_in_sys;
+  // reg did_write_in_sys;
+  // reg did_read_in_sys;
   stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
   // calculate next register values
@@ -74,8 +74,8 @@ module rcpu(
         // TODO skipped multiply and divide because they are too expensive
         // 4'b0010 : register_write_data = register_file[destination] * register_file[source];
         // 4'b0011 : register_write_data = register_file[destination] / register_file[source];
-        // 4'b0100 : register_write_data = register_file[destination] << ath_bitshift_amt;
-        // 4'b0101 : register_write_data = register_file[destination] >> ath_bitshift_amt;
+        4'b0100 : register_write_data = register_file[destination] << ath_bitshift_amt;
+        4'b0101 : register_write_data = register_file[destination] >> ath_bitshift_amt;
         4'b0110 : register_write_data = register_file[destination] & register_file[source];
         4'b0111 : register_write_data = register_file[destination] | register_file[source];
         4'b1000 : register_write_data = register_file[destination] ^ register_file[source];
@@ -98,9 +98,9 @@ module rcpu(
        // SYS opcode in memory fetch state
        6'b10_1100 : begin
          io_write_enable = st0[15];
-         did_write_in_sys = st0[15];
+         // did_write_in_sys = st0[15];
          io_read_enable  = st0[14];
-         did_read_in_sys = st0[14];
+         // did_read_in_sys = st0[14];
          io_address      = {st0[0:13], 2'b00};
          io_write_data   = st1;
        end
@@ -158,13 +158,13 @@ module rcpu(
     // SYS in writeback stage: pop address
     6'b10_1100:   {dstkW, dspI} = {1'b0, 2'b11};
     // SYS in instruction fetch stage:
-    6'b00_1100: case ({did_read_in_sys, did_write_in_sys})
-        2'b00: {dstkW, dspI} = {1'b0, 2'b00};
-        2'b10: {dstkW, dspI} = {1'b1, 2'b01};
-        2'b01: {dstkW, dspI} = {1'b0, 2'b11};
-        2'b11: {dstkW, dspI} = {1'b1, 2'b00};
-        default: {dstkW, dspI} = {1'b0, 2'b00}; // should never happen
-    endcase
+    // 6'b00_1100: case ({did_read_in_sys, did_write_in_sys})
+    //     2'b00: {dstkW, dspI} = {1'b0, 2'b00};
+    //     2'b10: {dstkW, dspI} = {1'b1, 2'b01};
+    //     2'b01: {dstkW, dspI} = {1'b0, 2'b11};
+    //     2'b11: {dstkW, dspI} = {1'b1, 2'b00};
+    //     default: {dstkW, dspI} = {1'b0, 2'b00}; // should never happen
+    // endcase
     // default: don't modify the stack
     default:   {dstkW, dspI} = {1'b0, 2'b00};
     endcase
@@ -182,10 +182,10 @@ module rcpu(
     // POP, RET
     4'b1000, 4'b1011: st0N = st1;
     4'b1100: begin
-        if (did_read_in_sys)
+        // if (did_read_in_sys)
             st0N = io_read_data;
-        else
-            st0N = st0;
+        // else
+        //     st0N = st0;
     end
     // default: don't modify the stack
     default: st0N = st0;
@@ -212,7 +212,7 @@ module rcpu(
     endcase
   end
 
-  always @(negedge resetq or posedge clk)
+  always @(posedge clk)
   begin
     if (!resetq) begin
       reboot = 1'b1;
@@ -223,7 +223,7 @@ module rcpu(
       register_file[3] = 0;
       current_state = 2'b11;
     end else begin
-      reboot <= 0;
+      reboot = 0;
       case(current_state)
         2'b00: begin // fetch stage
           mem_read_address = pc;
