@@ -111,6 +111,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   localparam MHZ = 12;
 
   wire clk;
+  wire PLL_is_stable;
   SB_PLL40_CORE #(.FEEDBACK_PATH("SIMPLE"),
                   .PLLOUT_SELECT("GENCLK"),
                   .DIVR(4'b0000),
@@ -120,8 +121,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
                  ) uut (
                          .REFERENCECLK(pclk),
                          .PLLOUTCORE(clk),
-                         //.PLLOUTGLOBAL(clk),
-                         // .LOCK(D5),
+                         .LOCK(PLL_is_stable),
                          .RESETB(1'b1),
                          .BYPASS(1'b0)
                         );
@@ -285,7 +285,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     .S1(s1)
     );
 
-  reg [0:16] ticks = 0;
+  reg [0:8] ticks = 0;
   always @(posedge clk) begin
     if (io_write_enable & io_address[1])
       pmod_dir <= io_write_data[8:15];
@@ -295,9 +295,13 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
       hdr2_dir <= io_write_data[8:15];
     if (io_write_enable & io_address[11])
       {boot, s1, s0} <= io_write_data[13:15];
-    if (ticks[0])
+
+    // workaround for RAM corrupting if read/written before the ~40 th clock cycle
+    // this is a hardware problem
+    if (ticks > 40)
       start_cpu <= 1;
-    ticks <= ticks + 1;
+    if (PLL_is_stable)
+      ticks <= ticks + 1;
   end
 
 endmodule // top
