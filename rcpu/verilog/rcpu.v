@@ -120,7 +120,7 @@ module rcpu(
     4'b0010: requested_mem_read_addr = {6'b0, large_argument};
     // LDR: load from memory pointed at by the source register
     4'b0100: requested_mem_read_addr = register_file[source];
-    default: requested_mem_read_addr = {12'hFFF, opcode}; // dummy value
+    default: requested_mem_read_addr = {12'hFFF, opcode}; // sentinel value
     endcase
   end
 
