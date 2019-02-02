@@ -5,7 +5,7 @@
 module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, input [0:15] read_addr, input[0:15] write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("../build/rom_leds_on.hex", mem);
+    $readmemh("../build/leds_count.hex", mem);
   end
 
   always @(posedge clk) begin
@@ -141,9 +141,6 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   wire io_read_enable, io_write_enable;
   wire [0:15] io_read_data, io_address, io_write_data;
 
-  wire [0:15] instruction;
-  wire [0:3] current_state;
-
   reg start_cpu = 0;
   rcpu _rcpu(
     .clk(clk),
@@ -159,9 +156,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     .mem_read_address(mem_read_addr),
     .mem_write_address(mem_write_addr),
     .mem_read_data(mem_read_data),
-    .mem_write_data(mem_write_data),
-    .instruction(instruction),
-    .current_state(current_state)
+    .mem_write_data(mem_write_data)
     );
 
   // ######   PMOD   ##########################################
@@ -222,9 +217,8 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
 
   wire [4:0] LEDS;
   wire w4 = io_write_enable & io_address[2];
-  reg led_enabled = 0;
 
-  outpin led0 (.clk(clk), .we(1), .pin(D5), .wd(led_enabled), .rd(LEDS[0]));
+  outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
   // outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
   outpin led1 (.clk(clk), .we(w4), .pin(D4), .wd(io_write_data[14]), .rd(LEDS[1]));
   outpin led2 (.clk(clk), .we(w4), .pin(D3), .wd(io_write_data[13]), .rd(LEDS[2]));
@@ -304,9 +298,6 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     if (ticks[0])
       start_cpu <= 1;
     ticks <= ticks + 1;
-    if (io_write_enable && !io_read_enable)
-        led_enabled <= 1;
-    // led_enabled <= (io_write_enable && !io_read_enable  && io_address != 0);
   end
 
 endmodule // top
