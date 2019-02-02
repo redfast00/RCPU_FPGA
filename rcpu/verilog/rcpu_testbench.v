@@ -53,8 +53,8 @@ module rcpu_tb();
   end
 
   initial  begin
-      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\topcode\tA\tB\tC\tD\tTOS\tio_addr\t\t\tR/W io\tio_data");
-      $monitor("%d\t%b\t%b\t%b\t\t%b\t%h\t%h\t%h\t%h\t%h\t%b\t%b/%b\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.opcode, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0, _cpu.io_address, _cpu.io_read_enable, _cpu.io_write_enable, _cpu.io_write_data);
+      $display("\t\ttime\tclk\tpc\t\t\tcurrent_state\tinstr\tA\tB\tC\tD\tTOS\tio_addr\t\t\tR/W io\tio_data");
+      $monitor("%d\t%b\t%b\t%b\t\t%h\t%h\t%h\t%h\t%h\t%h\t%b\t%b/%b\t%h",$time, clk, _cpu.pc, _cpu.current_state, _cpu.instruction, _cpu.register_file[0], _cpu.register_file[1], _cpu.register_file[2], _cpu.register_file[3], _cpu.st0, _cpu.io_address, _cpu.io_read_enable, _cpu.io_write_enable, _cpu.io_write_data);
   end
 
   always
@@ -63,8 +63,15 @@ module rcpu_tb();
 
   always
     #1 if (_cpu.opcode == 4'b1101) begin
+        #50
         $display("HLT");
         $finish();
     end
+
+  initial begin
+    #1000
+    $display("Loop detected");
+    $finish();
+  end
 
 endmodule
