@@ -29,8 +29,6 @@ module rcpu(
   wire [0:15] pc_plus_1 = pc + 16'd1;
 
   reg [0:15] register_file [0:3]; // a list of registers
-  reg reboot = 1;
-
 
   // The datastack
   wire [0:15] st1; // second in stack
@@ -53,7 +51,7 @@ module rcpu(
   reg did_write_in_syscall;
   reg did_read_in_syscall;
 
-  stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
+  stack2 #(.DEPTH(5)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
   // calculate next register values
   always @*
@@ -94,16 +92,14 @@ module rcpu(
   // calculate io operations
   always @*
   begin
-  case({current_state, opcode})
-       // SYS opcode
-       8'b0011_1100 : begin
-         io_write_enable = st0[15];
-         io_read_enable  = st0[14];
-         io_address = {st0[0:13], 2'b00};
-         io_write_data = st1;
-       end
-       default:  {io_write_enable, io_read_enable, io_address, io_write_data} = 0;
-  endcase
+  if (current_state == 4'b0011 && opcode == 4'b1100) begin
+     io_write_enable = st0[15];
+     io_read_enable  = st0[14];
+     io_address = {st0[0:13], 2'b00};
+     io_write_data = st1;
+   end
+   else
+     {io_write_enable, io_read_enable, io_address, io_write_data} = 0;
   end
 
   // calculate in which register to store the result of the calculation
@@ -217,10 +213,8 @@ module rcpu(
   always @(posedge clk)
   begin
     if (!resetq) begin
-      reboot = 1'b1;
       current_state = 4'b1111;
     end else begin
-      reboot = 0;
       case(current_state)
         4'b0000: begin
           mem_read_address <= pc;

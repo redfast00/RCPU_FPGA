@@ -140,7 +140,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
 
   wire io_read_enable, io_write_enable;
   wire [0:15] io_address, io_write_data;
-  reg [0:15] io_read_data;
+  reg [0:15] io_read_data = 0;
 
   reg start_cpu = 0;
   rcpu _rcpu(
@@ -235,21 +235,6 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   outpin pio3 (.clk(clk), .we(w8), .pin(PIO1_18), .wd(io_write_data[12]), .rd(PIOS[3]));
   outpin pio4 (.clk(clk), .we(w8), .pin(PIO1_20), .wd(io_write_data[11]), .rd(PIOS[4]));
 
-  // ######   RING OSCILLATOR   ###############################
-
-  wire [1:0] buffers_in, buffers_out;
-  assign buffers_in = {buffers_out[0:0], ~buffers_out[1]};
-  SB_LUT4 #(
-          .LUT_INIT(16'd2)
-  ) buffers [1:0] (
-          .O(buffers_out),
-          .I0(buffers_in),
-          .I1(1'b0),
-          .I2(1'b0),
-          .I3(1'b0)
-  );
-  wire random = ~buffers_out[1];
-
   // ######   IO PORTS   ######################################
 
   /*        bit   mode    device
@@ -276,7 +261,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     (io_address[ 6] ? {8'd0, hdr2_in}                                     : 16'd0) |
     (io_address[ 7] ? {8'd0, hdr2_dir}                                    : 16'd0) |
     (io_address[12] ? {8'd0, uart0_data}                                  : 16'd0) |
-    (io_address[13] ? {11'd0, random, PIO1_19, PIOS_01, uart0_valid, !uart0_busy} : 16'd0);
+    (io_address[13] ? {12'd0, PIO1_19, PIOS_01, uart0_valid, !uart0_busy} : 16'd0);
 
   reg boot, s0, s1;
 
