@@ -139,7 +139,8 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
       .write_data(mem_write_data));
 
   wire io_read_enable, io_write_enable;
-  wire [0:15] io_read_data, io_address, io_write_data;
+  wire [0:15] io_address, io_write_data;
+  reg [0:15] io_read_data;
 
   reg start_cpu = 0;
   rcpu _rcpu(
@@ -265,7 +266,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
             13    r       misc.in
   */
 
-  assign io_read_data =
+  wire [0:15] io_read_dataN =
     (io_address[ 0] ? {8'd0, pmod_in}                                     : 16'd0) |
     (io_address[ 1] ? {8'd0, pmod_dir}                                    : 16'd0) |
     (io_address[ 2] ? {11'd0, LEDS}                                       : 16'd0) |
@@ -296,6 +297,8 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     if (io_write_enable & io_address[11])
       {boot, s1, s0} <= io_write_data[13:15];
 
+    if (io_read_enable)
+      io_read_data <= io_read_dataN;
     // workaround for RAM corrupting if read/written before the ~40 th clock cycle
     // this is a hardware problem
     if (ticks > 40)

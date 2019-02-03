@@ -50,6 +50,9 @@ module rcpu(
   reg [0:1] register_address;
   reg [0:15] requested_mem_read_addr;
 
+  reg did_write_in_syscall;
+  reg did_read_in_syscall;
+
   stack2 #(.DEPTH(15)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
   // calculate next register values
@@ -148,8 +151,17 @@ module rcpu(
     // RET, POP: pop
     8'b0100_1000,
     8'b0100_1011:   {dstkW, dspI} = {1'b0, 2'b11};
-    // SYS: pop address
-    8'b0000_1100:   {dstkW, dspI} = {1'b0, 2'b11}; // TODO stack reads?
+    // first SYS: pop address
+    8'b0100_1100:   {dstkW, dspI} = {1'b0, 2'b11};
+    // second SYS
+    8'b0101_1100: begin
+        case ({did_read_in_syscall, did_write_in_syscall})
+            2'b00: {dstkW, dspI} = {1'b0, 2'b00}; // nop
+            2'b01: {dstkW, dspI} = {1'b0, 2'b11}; // pop
+            2'b10: {dstkW, dspI} = {1'b1, 2'b01}; // push
+            2'b11: {dstkW, dspI} = {1'b0, 2'b00}; // nop (but overwrite TOS)
+        endcase
+    end
     // default: don't modify the stack
     default:   {dstkW, dspI} = {1'b0, 2'b00};
     endcase
@@ -158,15 +170,24 @@ module rcpu(
     // depending if write bit (dstkW) is set
   always @*
     begin
-    case (opcode)
+    case ({current_state, opcode})
     // CAL
-    4'b0111: st0N = pc_plus_1;
+    8'b0101_0111: st0N = pc_plus_1;
     // PSH
-    4'b1010: st0N = register_file[source];
-    // SYS
-    4'b1100: st0N = 0; // TODO
+    8'b0101_1010: st0N = register_file[source];
+    // SYS first
+    8'b0100_1100: st0N = st1; // pop address
+    // SYS second
+    8'b0101_1100: begin
+        case ({did_read_in_syscall, did_write_in_syscall})
+            2'b10, 2'b11: st0N = io_read_data;
+            2'b01: st0N = st1;
+            2'b00: st0N = st0;
+            // TODO check if default is needed
+        endcase
+    end
     // POP, RET
-    4'b1000, 4'b1011: st0N = st1;
+    8'b0101_1000, 8'b0101_1011: st0N = st1;
     // default: don't modify the stack
     default: st0N = st0;
     endcase
@@ -175,21 +196,19 @@ module rcpu(
   always @*
     begin
     // calculate next program counter (instruction pointer)
-    casez ({reboot, opcode})
-    // reboot
-    5'b1_????: pcN = 0;
+    case (opcode)
     // CAL: next location is destination register
-    5'b0_0111: pcN = register_file[destination];
+    4'b0111: pcN = register_file[destination];
     // RET: next location is on top of stack
-    5'b0_1000: pcN = st0;
+    4'b1000: pcN = st0;
     // JLT: jump to source register if "A" register is smaller than destination register
-    5'b0_1001: pcN = ((register_file[destination] > register_file[0]) ? register_file[source] : pc_plus_1);
+    4'b1001: pcN = ((register_file[destination] > register_file[0]) ? register_file[source] : pc_plus_1);
     // HLT: stop processor
-    5'b0_1101: pcN = pc;
+    4'b1101: pcN = pc;
     // JMP: jump to argument
-    5'b0_1110: pcN = {6'b0, large_argument};
+    4'b1110: pcN = {6'b0, large_argument};
     // JRM: jump to source register
-    5'b0_1111: pcN = register_file[source];
+    4'b1111: pcN = register_file[source];
     // default: increase instruction
     default:   pcN = pc_plus_1;
     endcase
@@ -219,9 +238,15 @@ module rcpu(
         4'b0011: begin
             mem_read_address <= requested_mem_read_addr;
             mem_read_enable <= 1;
+            // io (via SYS) also happens here
+            did_read_in_syscall <= io_read_enable;
+            did_write_in_syscall <= io_write_enable;
             current_state <= 4'b0100;
         end
         4'b0100: begin
+            // update datastack in case SYS happened
+            // this pops the address off the stack
+            st0 <= st0N;
             current_state <= 4'b0101;
         end
         4'b0101: begin
