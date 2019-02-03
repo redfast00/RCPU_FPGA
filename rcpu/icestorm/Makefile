@@ -14,9 +14,13 @@ rcpu_icestick: rcpu_icestick.bin
 timing: rcpu_icestick.bin
 	icetime -td hx1k rcpu_icestick.asc
 
+usage:
+	yosys -p "synth_ice40 -noflatten" $(VERILOGS)
+
 clean:
 	rm -f rcpu_icestick.blif rcpu_icestick.asc rcpu_icestick.bin
 
 .PHONY: clean
 .PHONY: rcpu_icestick
 .PHONY: timing
+.PHONY: usage
