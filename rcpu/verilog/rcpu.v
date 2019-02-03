@@ -51,7 +51,7 @@ module rcpu(
   reg did_write_in_syscall;
   reg did_read_in_syscall;
 
-  stack2 #(.DEPTH(5)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
+  stack2 #(.DEPTH(10)) dstack(.clk(clk), .rd(st1), .we(dstkW), .wd(st0),   .delta(dspI)); // datastack
 
   // calculate next register values
   always @*
