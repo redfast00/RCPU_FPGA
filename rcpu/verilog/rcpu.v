@@ -142,11 +142,11 @@ module rcpu(
     // calculate next datastack operations
     case ({current_state, opcode})
     // CAL, PSH: push
-    8'b0100_0111,
-    8'b0100_1010:   {dstkW, dspI} = {1'b1, 2'b01};
+    8'b0101_0111,
+    8'b0101_1010:   {dstkW, dspI} = {1'b1, 2'b01};
     // RET, POP: pop
-    8'b0100_1000,
-    8'b0100_1011:   {dstkW, dspI} = {1'b0, 2'b11};
+    8'b0101_1000,
+    8'b0101_1011:   {dstkW, dspI} = {1'b0, 2'b11};
     // first SYS: pop address
     8'b0100_1100:   {dstkW, dspI} = {1'b0, 2'b11};
     // second SYS
