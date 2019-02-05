@@ -49,3 +49,9 @@ If we wanted to read the LEDs, we would push `0b0010_0000_0000_0010` and then us
 ## Questions?
 
 Please don't hesitate to open an issue/contact me
+
+## Roadmap
+
+- [X] Get UART tx working
+- [ ] Get UART rx working
+- [ ] Write some code in RCPU assembly that allows uploading code without reflashing
