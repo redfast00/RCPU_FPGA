@@ -19,7 +19,7 @@ module rcpu(
   input  wire [0:15] mem_read_data // data that was read from memory
   ); // end of inputs and outputs
 
-  reg [0:3] current_state = 4'b1111;
+  reg [0:3] current_state;
   reg [0:15] instruction;
 
   reg [0:15] st0, st0N;   // top of data stack, next top of data stack
