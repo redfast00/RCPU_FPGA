@@ -147,7 +147,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   reg start_cpu = 0;
   rcpu _rcpu(
     .clk(clk),
-    .resetq(start_cpu),
+    .resetq(start_cpu & resetq),
     .io_read_enable(io_read_enable),
     .io_write_enable(io_write_enable),
     .io_address(io_address),
@@ -218,24 +218,23 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
      .tx_data(io_write_data[8:15]),
      .rx_data(uart0_data));
 
-  wire [4:0] LEDS;
+  wire [0:4] LEDS;
   wire w4 = io_write_enable & io_address[2];
 
-  outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
-  // outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[0]));
-  outpin led1 (.clk(clk), .we(w4), .pin(D4), .wd(io_write_data[14]), .rd(LEDS[1]));
+  outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[4]));
+  outpin led1 (.clk(clk), .we(w4), .pin(D4), .wd(io_write_data[14]), .rd(LEDS[3]));
   outpin led2 (.clk(clk), .we(w4), .pin(D3), .wd(io_write_data[13]), .rd(LEDS[2]));
-  outpin led3 (.clk(clk), .we(w4), .pin(D2), .wd(io_write_data[12]), .rd(LEDS[3]));
-  outpin led4 (.clk(clk), .we(w4), .pin(D1), .wd(io_write_data[11]), .rd(LEDS[4]));
+  outpin led3 (.clk(clk), .we(w4), .pin(D2), .wd(io_write_data[12]), .rd(LEDS[1]));
+  outpin led4 (.clk(clk), .we(w4), .pin(D1), .wd(io_write_data[11]), .rd(LEDS[0]));
 
-  wire [4:0] PIOS;
+  wire [0:4] PIOS;
   wire w8 = io_write_enable & io_address[3];
 
-  outpin pio0 (.clk(clk), .we(w8), .pin(PIOS_03), .wd(io_write_data[15]), .rd(PIOS[0]));
-  outpin pio1 (.clk(clk), .we(w8), .pin(PIOS_02), .wd(io_write_data[14]), .rd(PIOS[1]));
+  outpin pio0 (.clk(clk), .we(w8), .pin(PIOS_03), .wd(io_write_data[15]), .rd(PIOS[4]));
+  outpin pio1 (.clk(clk), .we(w8), .pin(PIOS_02), .wd(io_write_data[14]), .rd(PIOS[3]));
   outpin pio2 (.clk(clk), .we(w8), .pin(PIOS_00), .wd(io_write_data[13]), .rd(PIOS[2]));
-  outpin pio3 (.clk(clk), .we(w8), .pin(PIO1_18), .wd(io_write_data[12]), .rd(PIOS[3]));
-  outpin pio4 (.clk(clk), .we(w8), .pin(PIO1_20), .wd(io_write_data[11]), .rd(PIOS[4]));
+  outpin pio3 (.clk(clk), .we(w8), .pin(PIO1_18), .wd(io_write_data[12]), .rd(PIOS[1]));
+  outpin pio4 (.clk(clk), .we(w8), .pin(PIO1_20), .wd(io_write_data[11]), .rd(PIOS[0]));
 
   // ######   IO PORTS   ######################################
 
