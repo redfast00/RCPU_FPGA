@@ -7,7 +7,7 @@
 module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, input [0:15] read_addr, input[0:15] write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("../build/leds_count.hex", mem);
+    $readmemh("../build/uart_send_recv.hex", mem);
   end
 
   always @(posedge clk) begin
@@ -71,6 +71,9 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
 
            output TXD,        // UART TX
            input RXD,         // UART RX
+
+           output CTS,        // UART clear to send
+           input RTS,         // UART ready to send
 
            output PIOS_00,    // flash SCK
            input PIOS_01,     // flash MISO
@@ -221,7 +224,7 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
   wire [0:4] LEDS;
   wire w4 = io_write_enable & io_address[2];
 
-  outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[4]));
+  outpin led0 (.clk(clk), .we(w4), .pin(D5), .wd(io_write_data[15]), .rd(LEDS[4])); // green led in middle
   outpin led1 (.clk(clk), .we(w4), .pin(D4), .wd(io_write_data[14]), .rd(LEDS[3]));
   outpin led2 (.clk(clk), .we(w4), .pin(D3), .wd(io_write_data[13]), .rd(LEDS[2]));
   outpin led3 (.clk(clk), .we(w4), .pin(D2), .wd(io_write_data[12]), .rd(LEDS[1]));
@@ -251,6 +254,23 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
             12    r/w     UART RX, UART TX
             13    r       misc.in
   */
+  reg [0:7] uart_data_read = 0;
+  reg uart_data_read_valid = 0;
+  outpin uart_rts (.clk(clk), .we(1), .pin(CTS), .wd(uart_data_read_valid));
+
+  always @(posedge clk) begin
+  if (uart_data_read_valid) begin
+      if (io_read_enable & io_address[12]) begin
+          uart_data_read_valid <= 0;
+      end
+  end
+  else begin
+      if (uart0_valid) begin
+          uart_data_read <= uart0_data;
+          uart_data_read_valid <= 1;
+      end
+  end
+  end
 
   wire [0:15] io_read_dataN =
     (io_address[ 0] ? {8'd0, pmod_in}                                     : 16'd0) |
@@ -261,8 +281,8 @@ module top(input pclk, output D1, output D2, output D3, output D4, output D5,
     (io_address[ 5] ? {8'd0, hdr1_dir}                                    : 16'd0) |
     (io_address[ 6] ? {8'd0, hdr2_in}                                     : 16'd0) |
     (io_address[ 7] ? {8'd0, hdr2_dir}                                    : 16'd0) |
-    (io_address[12] ? {8'd0, uart0_data}                                  : 16'd0) |
-    (io_address[13] ? {12'd0, PIO1_19, PIOS_01, uart0_valid, !uart0_busy} : 16'd0);
+    (io_address[12] ? {8'd0, uart_data_read}                              : 16'd0) |
+    (io_address[13] ? {12'd0, PIO1_19, PIOS_01, uart_data_read_valid, !uart0_busy} : 16'd0);
 
   reg boot, s0, s1;
 
