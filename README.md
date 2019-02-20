@@ -53,5 +53,5 @@ Please don't hesitate to open an issue/contact me
 ## Roadmap
 
 - [X] Get UART tx working
-- [ ] Get UART rx working
+- [X] Get UART rx working
 - [ ] Write some code in RCPU assembly that allows uploading code without reflashing
