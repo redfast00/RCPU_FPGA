@@ -46,6 +46,17 @@ For example, if we wanted to turn on the LEDs, we would first push `0xFFFF` (all
 
 If we wanted to read the LEDs, we would push `0b0010_0000_0000_0010` and then use the SYS instruction. The value of the LEDs will then be on the stack.
 
+## Example assembled programs
+
+The example ROMs in `rcpu/build/*.hex` are built with the RCPU assembler. The sourcecode
+of these are available in the main RCPU repository.
+
+## Bootloader
+
+The default ROM that runs is a simple bootloader: it reads addresses and values from UART
+and stores them in RAM. This allows you to load your programs without having to recompile the
+FPGA code and having to flash it each time you want to change your program
+
 ## Questions?
 
 Please don't hesitate to open an issue/contact me

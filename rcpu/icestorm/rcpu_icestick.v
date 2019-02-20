@@ -7,7 +7,7 @@
 module ram_memory(input clk, write_enable, read_enable, input [0:15] write_addr, input [0:15] read_addr, input[0:15] write_data, output reg [0:15] read_data);
   reg [0:15] mem [0:4095];
   initial begin
-    $readmemh("../build/uart_send_recv.hex", mem);
+    $readmemh("../build/bootloader.hex", mem);
   end
 
   always @(posedge clk) begin
